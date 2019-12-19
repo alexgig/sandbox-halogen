@@ -31,7 +31,7 @@ data Action
     | Decrement
 
 
-component :: forall query input output message. H.Component HH.HTML query input output message
+component :: forall input output message. H.Component HH.HTML Query input output message
 component =
     H.mkComponent
         { initialState
