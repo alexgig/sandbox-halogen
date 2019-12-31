@@ -10,9 +10,12 @@ import Prelude
 
 import Affjax as AX
 import Affjax.ResponseFormat as AXRF
-import Data.Maybe (Maybe(..))
+import Data.Argonaut.Core as J
+import Data.Argonaut.Parser as J
 import Data.Either (hush)
+import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
+import Foreign.Object (Object)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -29,7 +32,7 @@ type Slot = H.Slot Query Unit
 type State =
     { username :: String
     , loading :: Boolean
-    , response :: Maybe (AX.Response String)
+    , response :: Maybe (Object J.Json)
     }
 
 
@@ -68,7 +71,7 @@ render state =
             [ HH.text "Fetch"
             ]
         , HH.text $ show state.loading
-        , HH.div_ [ HH.text $ show state.response ]
+        , HH.div_ [ HH.text $ show $ (J.fromObject >>> J.stringify) <$> state.response ]
         ]
 
 
@@ -78,7 +81,9 @@ handleAction action =
         ChangedUsername value ->
             H.modify_ \state -> state { username = value }
         FetchUser -> do
+        --TODO What tells us that we are operating on the Halogen Monad in this do block?
             username <- H.gets _.username
             H.modify_ (_ {loading = true})
-            response <- H.liftAff $ AX.get AXRF.string ("https://api.github.com/users/" <> username)
-            H.modify_ (_ {loading = false, response = hush response })
+            response <- H.liftAff $ AX.get AXRF.json ("https://api.github.com/users/" <> username)
+            --TODO how do I access the response body properties? (i.e. show body.name)
+            H.modify_ (_ {loading = false, response = J.toObject =<< _.body <$> (hush response) })
