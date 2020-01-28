@@ -4,7 +4,7 @@ module Input
     , component
     )
     where
-      
+
 
 import Prelude
 
